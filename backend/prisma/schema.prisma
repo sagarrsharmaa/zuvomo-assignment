@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Direction {
+  BUY
+  SELL
+}
+
+enum SignalStatus {
+  OPEN
+  TARGET_HIT
+  STOPLOSS_HIT
+  EXPIRED
+}
+
+model Signal {
+  id             String       @id @default(uuid())
+  symbol         String       // e.g. BTCUSDT, ETHUSDT — stored uppercase
+  direction      Direction
+  entryPrice     Decimal      @db.Decimal(18, 8)
+  stopLoss       Decimal      @db.Decimal(18, 8)
+  targetPrice    Decimal      @db.Decimal(18, 8)
+  entryTime      DateTime
+  expiryTime     DateTime
+  createdAt      DateTime     @default(now())
+  status         SignalStatus @default(OPEN)
+  realizedRoi    Decimal?     @db.Decimal(10, 2) // nullable, set only on resolution
+  lastKnownPrice Decimal?     @db.Decimal(18, 8) // cache field — set on resolution and opportunistically while OPEN
+
+  @@index([status])
+  @@index([symbol])
+}
